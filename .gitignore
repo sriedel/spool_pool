@@ -1,0 +1,6 @@
+# vi temp files
+.*.swp
+.*.swo
+
+# everything under the test spool directory
+test_spool/**/*
