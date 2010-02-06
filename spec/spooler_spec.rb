@@ -22,10 +22,18 @@ describe Spooler do
   it "should store the spool_dir as a Pathname" do
     @instance.spool_dir.should be_a( Pathname )
   end
+
+  it "should have a spools attribute" do
+    @instance.should respond_to( :spools )
+  end
   
   describe "#initialize" do
     it "should set the spool_dir attribute" do
       Spooler.new( @spool_path ).spool_dir.to_s.should == @spool_path
+    end
+
+    it "should set up the spools attribute" do
+      Spooler.new( @spool_path ).spools.should == {}
     end
 
     context "the spool_dir does not exist" do
@@ -68,27 +76,26 @@ describe Spooler do
     end
   end
 
-  describe "#set" do
-    context "the queue directory exists" do
-      it "should raise an exception if it can't create a file"
-      it "should raise an exception if it can't read a file"
+  describe "#put" do
+    before( :each ) do
+      @stubbed_spool = mock( Spool, :put => true )
+      Spool.stub!( :new ).and_return( @stubbed_spool )
+    end
+    it "should create queue_dir object in the queues attribute if it doesn't exist yet" do
+      @instance.spools.delete :my_spool
+      @instance.put( :my_spool, 'some value' )
+      @instance.spools[:my_spool].should_not be_nil
     end
 
-    context "the queue directory doesn't exist" do
-      it "should try to create the queue directory"
-      it "should raise an exception if it can't create the spool_dir"
-    end
-
-    it "should write the passed object to a file"
-    it "should return the pathname of the stored file"
-    it "should raise an exception if no more space is available on the device"
-
-    context "on an aborted operation" do
-      it "should delete the the current storage file if one was created"
+    it "should return the filename of the spool file" do
+      pending
+      @instance.put( :my_spool, 'some value' ).should be_a( String )
     end
 
     context "queue names that try to escape the queue_dir" do
-      it "should raise an exception on directory traversal attempts"
+      it "should raise an exception on directory traversal attempts" do
+        lambda { @instance.put "../../foo", 'some value' }.should raise_error
+      end
       it "should not raise an exception if following a symlink"
     end
   end
