@@ -4,8 +4,14 @@ require 'spool_file'
 describe SpoolFile do
   
   before( :each ) do
-    @basepath = Pathname.new( "/var/spool/spooler/my_queue" )
+    @testspoolpath = File.join TEST_SPOOL_ROOT, "spool_files"
+    @basepath = Pathname.new( @testspoolpath )
+    @basepath.mkpath
     @data = "my_data"
+  end
+
+  after( :each ) do
+    @basepath.unlink
   end
 
   it "should have a pathname attribute" do
@@ -30,34 +36,39 @@ describe SpoolFile do
 
   describe "#write" do
     before( :each ) do
-      @instance = SpoolFile.new( @basepath )
+      @spoolfilepath = @basepath + "spoolfile_write_test"
+      @instance = SpoolFile.new( @spoolfilepath )
       @mock_filehandle = mock( File )
-      @basepath.stub!( :open ).and_yield( @mock_filehandle )
-      @basepath.stub!( :unlink ).and_return( true )
+    end
+
+    after( :each ) do
+      @spoolfilepath.unlink rescue nil
     end
 
     it "should write the passed data to the file" do
-      @mock_filehandle.should_receive( :puts ).with( @data )
       @instance.write( @data )
+      @instance.pathname.read.should == @data
     end
 
     it "should raise an exception if the file can't be created" do
-      @basepath.stub!( :open ).and_raise( RuntimeError )
+      @spoolfilepath.stub!( :open ).and_raise( RuntimeError )
       lambda { @instance.write( @data ) }.should raise_error( RuntimeError )
     end
 
     it "should raise an exception if the data can't be written" do
-      @mock_filehandle.stub!( :puts ).and_raise( RuntimeError )
+      @spoolfilepath.stub!( :open ).and_yield( @mock_filehandle )
+      @mock_filehandle.stub!( :write ).and_raise( RuntimeError )
       lambda { @instance.write( @data ) }.should raise_error( RuntimeError )
     end
 
     context "on an aborted operation" do
       before( :each ) do
-        @mock_filehandle.stub!( :puts ).and_raise( RuntimeError )
+        @mock_filehandle.stub!( :write ).and_raise( RuntimeError )
+        @spoolfilepath.stub!( :open ).and_yield( @mock_filehandle )
       end
       
       it "should delete any created file again" do
-        @basepath.should_receive( :unlink )
+        @spoolfilepath.should_receive( :unlink ).at_least(1).times
         lambda { @instance.write( @data ) }.should raise_error( RuntimeError )
       end
     end

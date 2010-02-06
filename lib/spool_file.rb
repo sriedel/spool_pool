@@ -11,9 +11,9 @@ class SpoolFile
 
   def write( data )
     begin
-      @pathname.open( "w" ) { |fh| fh.puts data }
+      @pathname.open( "w" ) { |fh| fh.write data }
     rescue 
-      @pathname.unlink
+      @pathname.unlink rescue nil
       raise $!
     end
   end

@@ -16,7 +16,7 @@ class Spooler
 
   def put( spool, data )
     validate_spool_path spool
-    @spools[spool] ||= Spool.new( @spool_dir + spool )
+    @spools[spool] ||= Spool.new( @spool_dir + spool.to_s )
     spoolfile_pathname = @spools[spool].put( data )
     spoolfile_pathname.to_s
   end

@@ -3,10 +3,8 @@ require 'spool'
 
 describe Spool do
   before( :each ) do
-    @pathname = mock( Pathname, :exist? => true,
-                                :writable? => true,
-                                :readable? => true,
-                                :+ => mock( Pathname, :null_object => true ) )
+    @testspoolpath = File.join( TEST_SPOOL_ROOT, "spools" )
+    @pathname = Pathname.new( @testspoolpath )
     @instance = Spool.new( @pathname )
   end
 
@@ -21,23 +19,32 @@ describe Spool do
 
     context "if the directory exists" do
       before( :each ) do
-        @pathname.stub!( :exist? ).and_return( true )
+        @pathname.mkpath
+      end
+
+      after( :each ) do
+        @pathname.unlink
       end
 
       it "should raise an exception if it can't create a file" do
-        @pathname.stub!( :writable? ).and_return( false )
+        @pathname.chmod 0555
         lambda { Spool.new( @pathname ) }.should raise_error( Errno::EACCES )
+        @pathname.chmod 0755
       end
 
       it "should raise an exception if it can't read a file" do
-        @pathname.stub!( :readable? ).and_return( false )
+        @pathname.chmod 0333
         lambda { Spool.new( @pathname ) }.should raise_error( Errno::EACCES )
+        @pathname.chmod 0755
       end
     end
 
     context "if the directory doesn't exist" do
+      before( :each ) do
+        @pathname.unlink if @pathname.exist?
+      end
+
       it "should not check accessablity" do
-        @pathname.stub!( :exist? ).and_return( false )
         @pathname.should_not_receive( :readable? )
         @pathname.should_not_receive( :writable? )
         Spool.new( @pathname )
@@ -52,33 +59,28 @@ describe Spool do
 
     context "the queue directory doesn't exist" do
       before( :each ) do
-        @pathname.stub!( :exist? ).and_return( false )
+        @pathname.unlink if @pathname.exist?
       end
 
       it "should try to create the queue directory" do
-        @pathname.should_receive( :mkpath )
-        @instance.put( @data )
+        path = @instance.put( @data )
+
+        @pathname.should exist
+        path.unlink if path.exist?
+        @pathname.unlink
       end
 
-      it "should raise an exception if it can't create the spool_dir"
-    end
-
-    context "the queue directory exists" do
-      before( :each ) do
-        @pathname.stub!( :exist? ).and_return( true )
-      end
-
-      it "shouldn't try to create the directory" do
-        @pathname.should_not_receive( :mkpath )
-        @instance.put( @data )
+      it "should raise an exception if it can't create the spool_dir" do
+        @pathname.parent.chmod 000
+        lambda { @instance.put( @data ) }.should raise_error
+        @pathname.parent.chmod 755
       end
     end
 
     it "should return the pathname of the stored file" do
-      mock_spoolfile = mock( SpoolFile, :write => true,
-                                        :pathname => mock( Pathname ) )
-      SpoolFile.stub!( :new ).and_return( mock_spoolfile )
-      @instance.put( @data ).to_s.should == mock_spoolfile.pathname.to_s
+      path = @instance.put( @data )
+      path.read.should == @data
+      path.unlink 
     end
   end
 
