@@ -1,13 +1,13 @@
 require 'spec_helper'
-require 'spool'
+require 'spool_pool/spool'
 
-describe Spool do
+describe SpoolPool::Spool do
   before( :each ) do
     @testspoolpath = File.join( TEST_SPOOL_ROOT, "spools" )
     @pathname = Pathname.new( @testspoolpath )
     @pathname.mkpath
     @pathname.chmod 0755
-    @instance = Spool.new( @pathname )
+    @instance = SpoolPool::Spool.new( @pathname )
   end
 
   after( :each ) do
@@ -30,13 +30,13 @@ describe Spool do
 
       it "should raise an exception if it can't create a file" do
         with_fs_mode( @pathname, 0555 ) do
-          lambda { Spool.new( @pathname ) }.should raise_error( Errno::EACCES )
+          lambda { SpoolPool::Spool.new( @pathname ) }.should raise_error( Errno::EACCES )
         end
       end
 
       it "should raise an exception if it can't read a file" do
         with_fs_mode( @pathname, 0333 ) do
-          lambda { Spool.new( @pathname ) }.should raise_error( Errno::EACCES )
+          lambda { SpoolPool::Spool.new( @pathname ) }.should raise_error( Errno::EACCES )
         end
       end
     end
@@ -49,7 +49,7 @@ describe Spool do
       it "should not check accessablity" do
         @pathname.should_not_receive( :readable? )
         @pathname.should_not_receive( :writable? )
-        Spool.new( @pathname )
+        SpoolPool::Spool.new( @pathname )
       end
     end
   end

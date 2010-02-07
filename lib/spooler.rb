@@ -1,5 +1,5 @@
 require 'pathname'
-require 'spool'
+require 'spool_pool/spool'
 
 class Spooler
   attr_reader :spool_dir
@@ -16,7 +16,7 @@ class Spooler
 
   def put( spool, data )
     validate_spool_path spool
-    @spools[spool] ||= Spool.new( @spool_dir + spool.to_s )
+    @spools[spool] ||= SpoolPool::Spool.new( @spool_dir + spool.to_s )
     @spools[spool].put( data )
   end
 
@@ -44,7 +44,7 @@ class Spooler
   end
 
   def create_spool_for_existing_path( pathname )
-    pathname.exist? ? Spool.new( pathname ) : nil
+    pathname.exist? ? SpoolPool::Spool.new( pathname ) : nil
   end
 
   def missing_spool_on_read_handler( spool )

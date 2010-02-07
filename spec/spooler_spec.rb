@@ -91,7 +91,7 @@ describe Spooler do
     it "should return the filename of the spool file" do
       filename = @instance.put( @spool, 'some value' )
       filename.should be_a( String )
-      Pathname.new( filename ).read.should == Spool.serialize( 'some value' )
+      Pathname.new( filename ).read.should == SpoolPool::Spool.serialize( 'some value' )
     end
 
     context "queue names that try to escape the queue_dir" do
