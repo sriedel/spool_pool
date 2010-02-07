@@ -1,4 +1,3 @@
-=begin rdoc
 = Introduction
 
   This is a simple implementation of a file spooler. You can think of it as
@@ -37,12 +36,5 @@ spool.put :my_other_spool, :bar
 spool.get :my_other_spool # -> :foo
 spool.get :my_other_spool # -> :bar
 
-=end
-module SpoolPool
-end
-
-$: << File.expand_path( File.dirname( __FILE__ ) )
-require 'spool_pool/pool'
-require 'spool_pool/spool'
-require 'spool_pool/file'
-
+= Feedback/Suggestions
+By email to: sr@gimp.org
