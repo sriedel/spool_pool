@@ -13,8 +13,6 @@ class Spool
 
   def put( data )
     @pathname.mkpath unless @pathname.exist?
-    file = SpoolFile.create_for_write( @pathname )
-    file.write( data )
-    file.pathname
+    SpoolFile.write( @pathname, data )
   end
 end

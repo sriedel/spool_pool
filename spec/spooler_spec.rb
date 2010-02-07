@@ -12,7 +12,7 @@ describe Spooler do
   end
 
   after( :each ) do
-    # @spool_pathname.unlink
+    @spool_pathname.rmtree
   end
 
   it "should have a spool_dir attribute" do
@@ -93,7 +93,9 @@ describe Spooler do
     end
 
     it "should return the filename of the spool file" do
-      @instance.put( :my_spool, 'some value' ).should be_a( String )
+      filename = @instance.put( :my_spool, 'some value' )
+      filename.should be_a( String )
+      Pathname.new( filename ).read.should == 'some value'
     end
 
     context "queue names that try to escape the queue_dir" do

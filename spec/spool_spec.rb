@@ -8,6 +8,10 @@ describe Spool do
     @instance = Spool.new( @pathname )
   end
 
+  after( :each ) do
+    @pathname.rmtree if @pathname.exist?
+  end
+
   it "should have a pathname attribute" do
     @instance.should respond_to( :pathname )
   end
@@ -20,10 +24,6 @@ describe Spool do
     context "if the directory exists" do
       before( :each ) do
         @pathname.mkpath
-      end
-
-      after( :each ) do
-        @pathname.unlink
       end
 
       it "should raise an exception if it can't create a file" do
@@ -59,28 +59,25 @@ describe Spool do
 
     context "the queue directory doesn't exist" do
       before( :each ) do
-        @pathname.unlink if @pathname.exist?
+        @pathname.rmtree if @pathname.exist?
       end
 
       it "should try to create the queue directory" do
         path = @instance.put( @data )
 
         @pathname.should exist
-        path.unlink if path.exist?
-        @pathname.unlink
       end
 
       it "should raise an exception if it can't create the spool_dir" do
-        @pathname.parent.chmod 000
+        @pathname.parent.chmod 0
         lambda { @instance.put( @data ) }.should raise_error
-        @pathname.parent.chmod 755
+        @pathname.parent.chmod 0755
       end
     end
 
-    it "should return the pathname of the stored file" do
+    it "should return the path of the stored file" do
       path = @instance.put( @data )
-      path.read.should == @data
-      path.unlink 
+      Pathname.new( path ).read.should == @data
     end
   end
 
