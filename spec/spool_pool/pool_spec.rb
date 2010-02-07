@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'spooler'
+require 'spool_pool/pool'
 
-describe Spooler do
+describe SpoolPool::Pool do
   before( :each ) do
     @root_pathname = Pathname.new( TEST_SPOOL_ROOT )
     @spool_path = File.join( TEST_SPOOL_ROOT, "spooler" )
@@ -9,7 +9,7 @@ describe Spooler do
     @spool_pathname.mkpath
     @spool_pathname.chmod 0755
 
-    @instance = Spooler.new( @spool_path )
+    @instance = SpoolPool::Pool.new( @spool_path )
     @spool = :my_spool
     @data = 'some data'
   end
@@ -50,7 +50,7 @@ describe Spooler do
         end
 
         it "should try to create the spool_dir" do
-          Spooler.new( @spool_path )
+          SpoolPool::Pool.new( @spool_path )
           @spool_pathname.should exist
           @spool_pathname.unlink if @spool_pathname.exist?
         end
@@ -59,7 +59,7 @@ describe Spooler do
       context "and it can't create the spool dir" do
         it "should raise an exception" do
           with_fs_mode( @root_pathname, 0555 ) do
-            lambda { Spooler.new( @spool_path ) }.should raise_error( Errno::EACCES )
+            lambda { SpoolPool::Pool.new( @spool_path ) }.should raise_error( Errno::EACCES )
           end
         end
       end
@@ -68,13 +68,13 @@ describe Spooler do
     context "the spool_dir exists" do
       it "should raise an exception if it can't create a file" do
         with_fs_mode( @spool_pathname, 0555 ) do
-          lambda { Spooler.new( @spool_path ) }.should raise_error( Errno::EACCES )
+          lambda { SpoolPool::Pool.new( @spool_path ) }.should raise_error( Errno::EACCES )
         end
       end
 
       it "should raise an exception if it can't read a file" do
         with_fs_mode( @spool_pathname, 0333 ) do
-          lambda { Spooler.new( @spool_path ) }.should raise_error( Errno::EACCES )
+          lambda { SpoolPool::Pool.new( @spool_path ) }.should raise_error( Errno::EACCES )
         end
       end
     end
