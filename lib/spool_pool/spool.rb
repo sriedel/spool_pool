@@ -3,18 +3,18 @@ require 'spool_pool/file'
 
 module SpoolPool
 =begin rdoc
-  This class manages the data storage and retrieval within a specific spool.
+This class manages the data storage and retrieval within a specific spool.
 =end
   class Spool
     attr_reader :pathname
 
 =begin rdoc
-  Uses the directory given in +pathname+ as the directory for the subsequent
-  spooling operations. 
+Uses the directory given in +pathname+ as the directory for the subsequent
+spooling operations. 
 
-  Will perform a simple check on the directory and throw an exception if the
-  directory already exists but isn't read- and writeable by the effective
-  user id of the process.
+Will perform a simple check on the directory and throw an exception if the
+directory already exists but isn't read- and writeable by the effective
+user id of the process.
 =end
     def initialize( pathname )
       @pathname = pathname
@@ -22,9 +22,9 @@ module SpoolPool
     end
 
 =begin rdoc
-  Serializes and stores the +data+.
-  
-  Returns the path of the file storing the data.
+Serializes and stores the +data+.
+
+Returns the path of the file storing the data.
 =end
     def put( data )
       @pathname.mkpath unless @pathname.exist?
@@ -32,10 +32,10 @@ module SpoolPool
     end
 
 =begin rdoc
-  Retrieves and deserializes the oldest data in the spool. 
-  
-  Ordering is based on the files ctime, but the ordering is non-strict. 
-  Data stored within the same second will be returned in a random order.
+Retrieves and deserializes the oldest data in the spool. 
+
+Ordering is based on the files ctime, but the ordering is non-strict. 
+Data stored within the same second will be returned in a random order.
 =end
     def get
       file = oldest_spooled_file
@@ -45,11 +45,11 @@ module SpoolPool
     end
 
 =begin rdoc
-  Retrieves and deserializes all the data in the spool, oldest data first. 
-  Each piece of spooled data will be yielded to the supplied block. 
+Retrieves and deserializes all the data in the spool, oldest data first. 
+Each piece of spooled data will be yielded to the supplied block. 
 
-  Ordering is based on the files ctime, but the ordering is non-strict. 
-  Data stored within the same second will be returned in a random order.
+Ordering is based on the files ctime, but the ordering is non-strict. 
+Data stored within the same second will be returned in a random order.
 =end
     def flush
       loop do
@@ -61,8 +61,8 @@ module SpoolPool
     end
 
 =begin rdoc
-  Serializes the data so that it can be deserialized with the +deserialize+ 
-  method later on.
+Serializes the data so that it can be deserialized with the +deserialize+ 
+method later on.
 =end
     def serialize( data )
       self.class.serialize( data )
@@ -73,7 +73,7 @@ module SpoolPool
     end
 
 =begin rdoc
-  Deserializes the +data+ that has previously been serialized with +serialize+.
+Deserializes the +data+ that has previously been serialized with +serialize+.
 =end
     def deserialize( data )
       self.class.deserialize( data )
