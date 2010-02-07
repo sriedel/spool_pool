@@ -91,7 +91,7 @@ describe Spooler do
     it "should return the filename of the spool file" do
       filename = @instance.put( @spool, 'some value' )
       filename.should be_a( String )
-      Pathname.new( filename ).read.should == 'some value'
+      Pathname.new( filename ).read.should == Spool.serialize( 'some value' )
     end
 
     context "queue names that try to escape the queue_dir" do
@@ -113,9 +113,17 @@ describe Spooler do
     end
   end
 
-  describe "#get" do
-    it "should return the deserialized contents of the oldest file in the given queue directory"
+  describe "the #get/#put pair" do
+    it "should serialize/deserialize the data written" do
+      data = { :foo => "some value", :bar => [ 3, 3.45, "another string" ] }
+      @instance.put @spool, data
+      read_data = @instance.get @spool
 
+      read_data.should == data
+    end
+  end
+
+  describe "#get" do
     it "should return the contents of one of the files with the oldest ctime in spool directory" do
       oldest_data = 'foo'
       youngest_data = 'blubb'

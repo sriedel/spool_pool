@@ -79,10 +79,19 @@ describe Spool do
 
     it "should return the path of the stored file" do
       path = @instance.put( @data )
-      Pathname.new( path ).read.should == @data
+      Pathname.new( path ).read.should == @instance.serialize( @data )
     end
+  end
 
-    it "should serialize the data to be stored"
+  describe "the #get/#put pair" do
+    it "should serialize and deserialize the data written" do
+      data = { :foo => 2, :bar => [ "some string", 3.45, ] }
+
+      @instance.put data
+      read_data = @instance.get
+
+      read_data.should == data
+    end
   end
 
   describe "#get" do
@@ -94,8 +103,6 @@ describe Spool do
     after( :each ) do
       @pathname.rmtree if @pathname.exist?
     end
-
-    it "should return the deserialized contents of the oldest file in the given queue directory"
 
     it "should return the contents of one of the files with the oldest ctime in spool directory" do
       oldest_data = 'foo'
