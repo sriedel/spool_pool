@@ -1,14 +1,14 @@
 =begin rdoc
 = Introduction
 This is a simple implementation of a file spooler. You can think of it as
-a filesystem based queueing service without a service running behind it, like 
-the spools used in unix for mail servers, print jobs and the like.
+a filesystem based queueing service without a service running behind it. 
+Like the spools used in unix for mail servers, print jobs etc.
 
 In this module, a Pool instance can contain several different Spool instances,
 each of which can store files. Data is retrieved from the spool in a 
 non-strict order, oldest first. 
 
-Data is serialized and deserialized on storage/retrievel (currently using
+Data is serialized and deserialized on storage/retrieval (currently using
 YAML).
 
 Most users will want to start using this library by instantiating a Pool 
