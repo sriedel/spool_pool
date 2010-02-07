@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'spool_pool/pool'
 
 describe SpoolPool::Pool do
   before( :each ) do

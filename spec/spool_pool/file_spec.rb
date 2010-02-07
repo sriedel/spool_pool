@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'spool_pool/file'
 
 describe SpoolPool::File do
   
