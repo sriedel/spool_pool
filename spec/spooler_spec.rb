@@ -7,8 +7,10 @@ describe Spooler do
     @spool_path = File.join( TEST_SPOOL_ROOT, "spooler" )
     @spool_pathname = Pathname.new( @spool_path )
     @spool_pathname.mkpath
+    @spool_pathname.chmod 0755
 
     @instance = Spooler.new( @spool_path )
+    @data = 'some data'
   end
 
   after( :each ) do
@@ -117,16 +119,99 @@ describe Spooler do
     end
   end
 
-  describe "#fetch" do
+  describe "#get" do
     it "should return the deserialized contents of the oldest file in the given queue directory"
-    it "should return nil if no file is available"
-    it "should raise an exception if the queue directory is not readable"
-    it "should delete the read file"
-    it "should raise an exception if the oldest file in the queue directory is not readable"
-    it "should raise an exception if the oldest file in the queue directory is not deleteable"
+
+    it "should return the contents of one of the files with the oldest ctime in spool directory" do
+      oldest_data = 'foo'
+      youngest_data = 'blubb'
+      @instance.put :my_spool, oldest_data
+      sleep 1
+      @instance.put :my_spool, youngest_data
+
+      @instance.get( :my_spool ).should == oldest_data
+    end
+
+    context "if the spool object doesn't exist yet" do
+      context "if such a spool directory exists" do
+        before( :each ) do
+          @instance.put :my_spool, @data
+          @instance.spools.delete :my_spool
+        end
+
+        it "should create a spool object" do
+          @instance.get :my_spool
+          @instance.spools[:my_spool].should_not be_nil
+        end
+
+        it "should return the result of the get operation" do
+          @instance.get( :my_spool ).should == @data
+        end
+      end
+
+      context "if such a spool directory does not exist" do
+        it "should return nil" do
+          @instance.get( :non_existant_spool ).should be_nil
+        end
+      end
+    end
+
+    context "no file is available in the requested spool" do
+      before( :each ) do
+        @spool_pathname.children.each { |child| child.unlink }
+      end
+
+      it "should return nil" do
+        @instance.get( :my_spool ).should be_nil
+      end
+    end
+
+    it "should raise an exception if the queue directory is not readable" do
+      @instance.put :my_spool, "some data"
+
+      @spool_pathname.chmod 0
+      lambda { @instance.get( :my_spool ) }.should raise_error
+      @spool_pathname.chmod 0755
+    end
+
+    it "should delete the read file" do
+      path = Pathname.new( @instance.put( :my_spool, @data ) )
+      @instance.get :my_spool
+      path.should_not be_exist
+    end
+
+    it "should raise an exception if the oldest file in the queue directory is not readable" do
+      path = Pathname.new( @instance.put( :my_spool, @data ) )
+      path.chmod 0333
+      lambda { @instance.get( :my_spool ) }.should raise_error
+      path.chmod 0755
+      path.unlink
+    end
+
+    it "should raise an exception if the oldest file in the queue directory is not deleteable" do
+      path = Pathname.new( @instance.put( :my_spool, @data ) )
+      @instance.spools[:my_spool].pathname.chmod 0555
+      lambda { @instance.get( :my_spool ) }.should raise_error
+      @instance.spools[:my_spool].pathname.chmod 0755
+      path.unlink
+    end
+
     context "queue names that try to escape the queue_dir" do
-      it "should raise an exception on directory traversal attempts"
-      it "should not raise an exception if following a symlink"
+      it "should raise an exception on directory traversal attempts" do
+        lambda { @instance.get "../../foo" }.should raise_error
+      end
+
+      it "should not raise an exception if following a symlink" do
+        real_path = Pathname.new( @spool_pathname + "real" )
+        real_path.mkpath
+        symlinked_path = Pathname.new( @spool_pathname + "symlink" )
+        symlinked_path.make_symlink( real_path.to_s )
+
+        lambda { @instance.get "symlink" }.should_not raise_error
+
+        symlinked_path.unlink
+        real_path.rmtree
+      end
     end
   end
 

@@ -15,4 +15,11 @@ class Spool
     @pathname.mkpath unless @pathname.exist?
     SpoolFile.write( @pathname, data )
   end
+
+  def get
+    file = @pathname.children.sort { |a,b| a.ctime <=> b.ctime }.first
+    retval = file ? file.read : nil
+    file.unlink if file
+    retval
+  end
 end

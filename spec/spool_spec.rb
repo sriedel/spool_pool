@@ -5,6 +5,8 @@ describe Spool do
   before( :each ) do
     @testspoolpath = File.join( TEST_SPOOL_ROOT, "spools" )
     @pathname = Pathname.new( @testspoolpath )
+    @pathname.mkpath
+    @pathname.chmod 0755
     @instance = Spool.new( @pathname )
   end
 
@@ -79,18 +81,64 @@ describe Spool do
       path = @instance.put( @data )
       Pathname.new( path ).read.should == @data
     end
+
+    it "should serialize the data to be stored"
   end
 
-  describe "#fetch" do
+  describe "#get" do
+    before( :each ) do
+      @pathname.mkpath
+      @pathname.chmod 0755
+    end
+
     it "should return the deserialized contents of the oldest file in the given queue directory"
-    it "should return nil if no file is available"
-    it "should raise an exception if the queue directory is not readable"
-    it "should delete the read file"
-    it "should raise an exception if the oldest file in the queue directory is not readable"
-    it "should raise an exception if the oldest file in the queue directory is not deleteable"
-    context "queue names that try to escape the queue_dir" do
-      it "should raise an exception on directory traversal attempts"
-      it "should not raise an exception if following a symlink"
+
+    it "should return the contents of one of the files with the oldest ctime in spool directory" do
+      oldest_data = 'foo'
+      youngest_data = 'blubb'
+      @instance.put oldest_data
+      sleep 1
+      @instance.put youngest_data
+
+      @instance.get.should == oldest_data
+    end
+
+    context "no file is available in the requested spool" do
+      before( :each ) do
+        @pathname.children.each { |child| child.unlink }
+      end
+
+      it "should return nil" do
+        @instance.get.should be_nil
+      end
+    end
+
+    it "should raise an exception if the queue directory is not readable" do
+      @pathname.chmod 0
+      lambda { @instance.get }.should raise_error
+      @pathname.chmod 0755
+    end
+
+    it "should delete the read file" do
+      path = Pathname.new( @instance.put( @data ) )
+      @instance.get
+      path.should_not be_exist
+    end
+
+    it "should raise an exception if the oldest file in the queue directory is not readable" do
+      path = Pathname.new( @instance.put( @data ) )
+      path.chmod 0333
+      lambda { @instance.get }.should raise_error
+      path.chmod 0755
+      path.unlink
+    end
+
+    it "should raise an exception if the oldest file in the queue directory is not deleteable" do
+      path = Pathname.new( @instance.put( @data ) )
+      @pathname.chmod 0555
+      lambda { @instance.get }.should raise_error
+      @pathname.chmod 0755
+      path.unlink
     end
   end
 
@@ -101,9 +149,5 @@ describe Spool do
     it "should raise an exception if the queue directory is not readable"
     it "should raise an exception if any file in the queue directory is not readable"
     it "should raise an exception if any file in the queue directory is not deleteable"
-    context "queue names that try to escape the queue_dir" do
-      it "should raise an exception on directory traversal attempts"
-      it "should not raise an exception if following a symlink"
-    end
   end
 end
