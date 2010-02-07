@@ -29,15 +29,15 @@ describe Spool do
       end
 
       it "should raise an exception if it can't create a file" do
-        @pathname.chmod 0555
-        lambda { Spool.new( @pathname ) }.should raise_error( Errno::EACCES )
-        @pathname.chmod 0755
+        with_fs_mode( @pathname, 0555 ) do
+          lambda { Spool.new( @pathname ) }.should raise_error( Errno::EACCES )
+        end
       end
 
       it "should raise an exception if it can't read a file" do
-        @pathname.chmod 0333
-        lambda { Spool.new( @pathname ) }.should raise_error( Errno::EACCES )
-        @pathname.chmod 0755
+        with_fs_mode( @pathname, 0333 ) do
+          lambda { Spool.new( @pathname ) }.should raise_error( Errno::EACCES )
+        end
       end
     end
 
@@ -71,9 +71,9 @@ describe Spool do
       end
 
       it "should raise an exception if it can't create the spool_dir" do
-        @pathname.parent.chmod 0
-        lambda { @instance.put( @data ) }.should raise_error
-        @pathname.parent.chmod 0755
+        with_fs_mode( @pathname.parent, 0000 ) do
+          lambda { @instance.put( @data ) }.should raise_error
+        end
       end
     end
 
@@ -89,6 +89,10 @@ describe Spool do
     before( :each ) do
       @pathname.mkpath
       @pathname.chmod 0755
+    end
+
+    after( :each ) do
+      @pathname.rmtree if @pathname.exist?
     end
 
     it "should return the deserialized contents of the oldest file in the given queue directory"
@@ -114,9 +118,9 @@ describe Spool do
     end
 
     it "should raise an exception if the queue directory is not readable" do
-      @pathname.chmod 0
-      lambda { @instance.get }.should raise_error
-      @pathname.chmod 0755
+      with_fs_mode( @pathname, 0000 ) do
+        lambda { @instance.get }.should raise_error
+      end
     end
 
     it "should delete the read file" do
@@ -127,18 +131,16 @@ describe Spool do
 
     it "should raise an exception if the oldest file in the queue directory is not readable" do
       path = Pathname.new( @instance.put( @data ) )
-      path.chmod 0333
-      lambda { @instance.get }.should raise_error
-      path.chmod 0755
-      path.unlink
+      with_fs_mode( path, 0333 ) do
+        lambda { @instance.get }.should raise_error
+      end
     end
 
     it "should raise an exception if the oldest file in the queue directory is not deleteable" do
       path = Pathname.new( @instance.put( @data ) )
-      @pathname.chmod 0555
-      lambda { @instance.get }.should raise_error
-      @pathname.chmod 0755
-      path.unlink
+      with_fs_mode( @pathname, 0555 ) do
+        lambda { @instance.get }.should raise_error
+      end
     end
   end
 
@@ -187,25 +189,23 @@ describe Spool do
     end
 
     it "should raise an exception if the queue directory is not readable" do
-      @pathname.chmod 0
-      lambda { @instance.fetch }.should raise_error
-      @pathname.chmod 0755
+      with_fs_mode( @pathname, 0000 ) do
+        lambda { @instance.fetch }.should raise_error
+      end
     end
 
     it "should raise an exception if the oldest file in the queue directory is not readable" do
       path = Pathname.new( @instance.put( @data ) )
-      path.chmod 0333
-      lambda { @instance.fetch }.should raise_error
-      path.chmod 0755
-      path.unlink
+      with_fs_mode( path, 0333 ) do
+        lambda { @instance.fetch }.should raise_error
+      end
     end
 
     it "should raise an exception if the oldest file in the queue directory is not deleteable" do
       path = Pathname.new( @instance.put( @data ) )
-      @pathname.chmod 0555
-      lambda { @instance.fetch }.should raise_error
-      @pathname.chmod 0755
-      path.unlink
+      with_fs_mode( @pathname, 0555 ) do
+        lambda { @instance.fetch }.should raise_error
+      end
     end
   end
 end

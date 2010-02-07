@@ -40,9 +40,9 @@ describe SpoolFile do
     end
 
     it "should raise an exception if the file can't be created" do
-      @basepath.chmod 0000
-      lambda { SpoolFile.write( @basepath, @data ) }.should raise_error
-      @basepath.chmod 0755
+      with_fs_mode( @basepath, 0000 ) do
+        lambda { SpoolFile.write( @basepath, @data ) }.should raise_error
+      end
     end
 
     it "should raise an exception if the data can't be written" do

@@ -10,6 +10,7 @@ describe Spooler do
     @spool_pathname.chmod 0755
 
     @instance = Spooler.new( @spool_path )
+    @spool = :my_spool
     @data = 'some data'
   end
 
@@ -56,44 +57,39 @@ describe Spooler do
       end
 
       context "and it can't create the spool dir" do
-        before( :each ) do
-          @root_pathname.chmod 0555
-        end
-        after( :each ) do
-          @root_pathname.chmod 0755
-        end
-
         it "should raise an exception" do
-          lambda { Spooler.new( @spool_path ) }.should raise_error( Errno::EACCES )
+          with_fs_mode( @root_pathname, 0555 ) do
+            lambda { Spooler.new( @spool_path ) }.should raise_error( Errno::EACCES )
+          end
         end
       end
     end
 
     context "the spool_dir exists" do
       it "should raise an exception if it can't create a file" do
-        @spool_pathname.chmod 0555
-        lambda { Spooler.new( @spool_path ) }.should raise_error( Errno::EACCES )
-        @spool_pathname.chmod 0755
+        with_fs_mode( @spool_pathname, 0555 ) do
+          lambda { Spooler.new( @spool_path ) }.should raise_error( Errno::EACCES )
+        end
       end
 
       it "should raise an exception if it can't read a file" do
-        @spool_pathname.chmod 0333
-        lambda { Spooler.new( @spool_path ) }.should raise_error( Errno::EACCES )
-        @spool_pathname.chmod 0755
+        with_fs_mode( @spool_pathname, 0333 ) do
+          lambda { Spooler.new( @spool_path ) }.should raise_error( Errno::EACCES )
+        end
       end
     end
   end
 
   describe "#put" do
     it "should create queue_dir object in the queues attribute if it doesn't exist yet" do
-      @instance.spools.delete :my_spool
-      filename = @instance.put( :my_spool, 'some value' )
-      @instance.spools[:my_spool].should_not be_nil
+      @instance.spools.delete @spool
+      filename = @instance.put( @spool, 'some value' )
+      @instance.spools[@spool].should_not be_nil
       File.unlink( filename ) if File.exist?( filename )
     end
 
     it "should return the filename of the spool file" do
-      filename = @instance.put( :my_spool, 'some value' )
+      filename = @instance.put( @spool, 'some value' )
       filename.should be_a( String )
       Pathname.new( filename ).read.should == 'some value'
     end
@@ -123,27 +119,27 @@ describe Spooler do
     it "should return the contents of one of the files with the oldest ctime in spool directory" do
       oldest_data = 'foo'
       youngest_data = 'blubb'
-      @instance.put :my_spool, oldest_data
+      @instance.put @spool, oldest_data
       sleep 1
-      @instance.put :my_spool, youngest_data
+      @instance.put @spool, youngest_data
 
-      @instance.get( :my_spool ).should == oldest_data
+      @instance.get( @spool ).should == oldest_data
     end
 
     context "if the spool object doesn't exist yet" do
       context "if such a spool directory exists" do
         before( :each ) do
-          @instance.put :my_spool, @data
-          @instance.spools.delete :my_spool
+          @instance.put @spool, @data
+          @instance.spools.delete @spool
         end
 
         it "should create a spool object" do
-          @instance.get :my_spool
-          @instance.spools[:my_spool].should_not be_nil
+          @instance.get @spool
+          @instance.spools[@spool].should_not be_nil
         end
 
         it "should return the result of the get operation" do
-          @instance.get( :my_spool ).should == @data
+          @instance.get( @spool ).should == @data
         end
       end
 
@@ -160,37 +156,37 @@ describe Spooler do
       end
 
       it "should return nil" do
-        @instance.get( :my_spool ).should be_nil
+        @instance.get( @spool ).should be_nil
       end
     end
 
     it "should raise an exception if the queue directory is not readable" do
-      @instance.put :my_spool, "some data"
+      @instance.put @spool, "some data"
 
-      @spool_pathname.chmod 0
-      lambda { @instance.get( :my_spool ) }.should raise_error
-      @spool_pathname.chmod 0755
+      with_fs_mode( @spool_pathname, 0000 ) do
+        lambda { @instance.get( @spool ) }.should raise_error
+      end
     end
 
     it "should delete the read file" do
-      path = Pathname.new( @instance.put( :my_spool, @data ) )
-      @instance.get :my_spool
+      path = Pathname.new( @instance.put( @spool, @data ) )
+      @instance.get @spool
       path.should_not be_exist
     end
 
     it "should raise an exception if the oldest file in the queue directory is not readable" do
-      path = Pathname.new( @instance.put( :my_spool, @data ) )
-      path.chmod 0333
-      lambda { @instance.get( :my_spool ) }.should raise_error
-      path.chmod 0755
+      path = Pathname.new( @instance.put( @spool, @data ) )
+      with_fs_mode( path, 0333 ) do
+        lambda { @instance.get( @spool ) }.should raise_error
+      end
       path.unlink
     end
 
     it "should raise an exception if the oldest file in the queue directory is not deleteable" do
-      path = Pathname.new( @instance.put( :my_spool, @data ) )
-      @instance.spools[:my_spool].pathname.chmod 0555
-      lambda { @instance.get( :my_spool ) }.should raise_error
-      @instance.spools[:my_spool].pathname.chmod 0755
+      path = Pathname.new( @instance.put( @spool, @data ) )
+      with_fs_mode( @instance.spools[@spool].pathname, 0555 ) do
+        lambda { @instance.get( @spool ) }.should raise_error
+      end
       path.unlink
     end
 
@@ -219,22 +215,22 @@ describe Spooler do
         @oldest_data = "oldest data"
         @middle_data = "middle data"
         @youngest_data = "youngest data"
-        @oldest_file = @instance.put :my_spool, @oldest_data
+        @oldest_file = @instance.put @spool, @oldest_data
         sleep 1
-        @middle_file = @instance.put :my_spool, @middle_data
+        @middle_file = @instance.put @spool, @middle_data
         sleep 1
-        @youngest_file = @instance.put :my_spool, @youngest_data
+        @youngest_file = @instance.put @spool, @youngest_data
       end
 
       it "should be yielded to the passed block" do
         times_yielded = 0
-        @instance.flush( :my_spool ) { times_yielded += 1 }
+        @instance.flush( @spool ) { times_yielded += 1 }
         times_yielded.should == 3
       end
 
       it "should be yielded ordered by date, oldest first" do
         times_yielded = 0
-        @instance.flush( :my_spool ) do |data|
+        @instance.flush( @spool ) do |data|
           times_yielded += 1
           case times_yielded
             when 1 then data.should == @oldest_data
@@ -246,7 +242,7 @@ describe Spooler do
 
       it "should be deleted after it was processed" do
         times_yielded = 0
-        @instance.flush( :my_spool ) do |data|
+        @instance.flush( @spool ) do |data|
           times_yielded += 1
           case times_yielded
             when 1 then File.exist?(@oldest_file).should_not be_true
@@ -258,26 +254,25 @@ describe Spooler do
     end
 
     it "should raise an exception if the queue directory is not readable" do
-      @instance.put( :my_spool, @data )
-      @instance.spools[:my_spool].pathname.chmod 0
-      lambda { @instance.flush( :my_spool ) }.should raise_error
-      @instance.spools[:my_spool].pathname.chmod 0755
+      @instance.put( @spool, @data )
+      with_fs_mode( @instance.spools[@spool].pathname, 0000 ) do
+        lambda { @instance.flush( @spool ) }.should raise_error
+      end
     end
 
     it "should raise an exception if the oldest file in the queue directory is not readable" do
-      path = Pathname.new( @instance.put( :my_spool, @data ) )
-      path.chmod 0333
-      lambda { @instance.flush( :my_spool ) }.should raise_error
-      path.chmod 0755
+      path = Pathname.new( @instance.put( @spool, @data ) )
+      with_fs_mode( path, 0333 ) do
+        lambda { @instance.flush( @spool ) }.should raise_error
+      end
       path.unlink
     end
 
     it "should raise an exception if the oldest file in the queue directory is not deleteable" do
-      path = Pathname.new( @instance.put( :my_spool, @data ) )
-      @instance.spools[:my_spool].pathname.chmod 0555
-      lambda { @instance.flush( :my_spool ) {} }.should raise_error
-      @instance.spools[:my_spool].pathname.chmod 0755
-      path.unlink
+      path = Pathname.new( @instance.put( @spool, @data ) )
+      with_fs_mode( @instance.spools[@spool].pathname, 0555 ) do
+        lambda { @instance.flush( @spool ) {} }.should raise_error
+      end
     end
 
     context "queue names that try to escape the queue_dir" do
