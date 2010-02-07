@@ -40,6 +40,7 @@ class Spooler
   def setup_spooldir
     raise Errno::EACCES.new("The directory '#{@spool_dir}' does not exist and I don't have enough permissions to create it!") unless @spool_dir.parent.writable?
     @spool_dir.mkpath 
+    @spool_dir.chmod 0755
   end
 
   def create_spool_for_existing_path( pathname )

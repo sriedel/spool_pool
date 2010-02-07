@@ -14,7 +14,7 @@ describe Spooler do
   end
 
   after( :each ) do
-    @spool_pathname.rmtree
+    @spool_pathname.rmtree if @spool_pathname.exist?
   end
 
   it "should have a spool_dir attribute" do
@@ -49,7 +49,6 @@ describe Spooler do
         end
 
         it "should try to create the spool_dir" do
-          pending
           Spooler.new( @spool_path )
           @spool_pathname.should exist
           @spool_pathname.unlink if @spool_pathname.exist?
@@ -65,7 +64,6 @@ describe Spooler do
         end
 
         it "should raise an exception" do
-          pending
           lambda { Spooler.new( @spool_path ) }.should raise_error( Errno::EACCES )
         end
       end
