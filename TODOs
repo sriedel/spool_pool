@@ -1,0 +1,5 @@
+- move everything into a namespace
+- gemify
+- provide safe despooling function (keep data for uncaught exceptions)
+- move despooling into SpoolFile class
+- use upfront spool pool checking, instead late checking
