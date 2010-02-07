@@ -28,6 +28,14 @@ class Spooler
     @spools[spool].get if @spools[spool] 
   end
 
+  def flush( spool, &block )
+    validate_spool_path spool
+
+    missing_spool_on_read_handler( spool ) unless @spools.has_key?( spool )
+
+    @spools[spool].flush( &block ) if @spools[spool]
+  end
+
   private
   def setup_spooldir
     raise Errno::EACCES.new("The directory '#{@spool_dir}' does not exist and I don't have enough permissions to create it!") unless @spool_dir.parent.writable?

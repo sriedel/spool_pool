@@ -22,4 +22,13 @@ class Spool
     file.unlink if file
     retval
   end
+
+  def flush
+    loop do
+      data = get
+      break if data.nil?
+
+      yield data
+    end
+  end
 end

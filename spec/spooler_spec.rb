@@ -216,15 +216,88 @@ describe Spooler do
   end
 
   describe "#flush" do
-    it "should yield every file in the given queue directory to the passed block"
-    it "should yield the files ordered by date, oldest first"
-    it "should delete each file after it was processed"
-    it "should raise an exception if the queue directory is not readable"
-    it "should raise an exception if any file in the queue directory is not readable"
-    it "should raise an exception if any file in the queue directory is not deleteable"
+    context "each file in the spool directory" do
+      before( :each ) do
+        @oldest_data = "oldest data"
+        @middle_data = "middle data"
+        @youngest_data = "youngest data"
+        @oldest_file = @instance.put :my_spool, @oldest_data
+        sleep 1
+        @middle_file = @instance.put :my_spool, @middle_data
+        sleep 1
+        @youngest_file = @instance.put :my_spool, @youngest_data
+      end
+
+      it "should be yielded to the passed block" do
+        times_yielded = 0
+        @instance.flush( :my_spool ) { times_yielded += 1 }
+        times_yielded.should == 3
+      end
+
+      it "should be yielded ordered by date, oldest first" do
+        times_yielded = 0
+        @instance.flush( :my_spool ) do |data|
+          times_yielded += 1
+          case times_yielded
+            when 1 then data.should == @oldest_data
+            when 2 then data.should == @middle_data
+            when 3 then data.should == @youngest_data
+          end
+        end
+      end
+
+      it "should be deleted after it was processed" do
+        times_yielded = 0
+        @instance.flush( :my_spool ) do |data|
+          times_yielded += 1
+          case times_yielded
+            when 1 then File.exist?(@oldest_file).should_not be_true
+            when 2 then File.exist?(@middle_file).should_not be_true
+            when 3 then File.exist?(@youngest_file).should_not be_true
+          end
+        end
+      end
+    end
+
+    it "should raise an exception if the queue directory is not readable" do
+      @instance.put( :my_spool, @data )
+      @instance.spools[:my_spool].pathname.chmod 0
+      lambda { @instance.flush( :my_spool ) }.should raise_error
+      @instance.spools[:my_spool].pathname.chmod 0755
+    end
+
+    it "should raise an exception if the oldest file in the queue directory is not readable" do
+      path = Pathname.new( @instance.put( :my_spool, @data ) )
+      path.chmod 0333
+      lambda { @instance.flush( :my_spool ) }.should raise_error
+      path.chmod 0755
+      path.unlink
+    end
+
+    it "should raise an exception if the oldest file in the queue directory is not deleteable" do
+      path = Pathname.new( @instance.put( :my_spool, @data ) )
+      @instance.spools[:my_spool].pathname.chmod 0555
+      lambda { @instance.flush( :my_spool ) {} }.should raise_error
+      @instance.spools[:my_spool].pathname.chmod 0755
+      path.unlink
+    end
+
     context "queue names that try to escape the queue_dir" do
-      it "should raise an exception on directory traversal attempts"
-      it "should not raise an exception if following a symlink"
+      it "should raise an exception on directory traversal attempts" do
+        lambda { @instance.flush( "../../foo" ) {} }.should raise_error
+      end
+
+      it "should not raise an exception if following a symlink" do
+        real_path = Pathname.new( @spool_pathname + "real" )
+        real_path.mkpath
+        symlinked_path = Pathname.new( @spool_pathname + "symlink" )
+        symlinked_path.make_symlink( real_path.to_s )
+
+        lambda { @instance.flush( "symlink" ) {} }.should_not raise_error
+
+        symlinked_path.unlink
+        real_path.rmtree
+      end
     end
   end
 end

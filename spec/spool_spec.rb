@@ -143,11 +143,69 @@ describe Spool do
   end
 
   describe "#flush" do
-    it "should yield every file in the given queue directory to the passed block"
-    it "should yield the files ordered by date, oldest first"
-    it "should delete each file after it was processed"
-    it "should raise an exception if the queue directory is not readable"
-    it "should raise an exception if any file in the queue directory is not readable"
-    it "should raise an exception if any file in the queue directory is not deleteable"
+    context "each file in the spool directory" do
+      before( :each ) do
+        @oldest_data = "oldest data"
+        @middle_data = "middle data"
+        @youngest_data = "youngest data"
+        @oldest_file = @instance.put @oldest_data
+        sleep 1
+        @middle_file = @instance.put @middle_data
+        sleep 1
+        @youngest_file = @instance.put @youngest_data
+      end
+
+      it "should be yielded to the passed block" do
+        times_yielded = 0
+        @instance.flush { times_yielded += 1 }
+        times_yielded.should == 3
+      end
+
+      it "should be yielded ordered by date, oldest first" do
+        times_yielded = 0
+        @instance.flush do |data|
+          times_yielded += 1
+          case times_yielded
+            when 1 then data.should == @oldest_data
+            when 2 then data.should == @middle_data
+            when 3 then data.should == @youngest_data
+          end
+        end
+      end
+
+      it "should be deleted after it was processed" do
+        times_yielded = 0
+        @instance.flush do |data|
+          times_yielded += 1
+          case times_yielded
+            when 1 then File.exist?(@oldest_file).should_not be_true
+            when 2 then File.exist?(@middle_file).should_not be_true
+            when 3 then File.exist?(@youngest_file).should_not be_true
+          end
+        end
+      end
+    end
+
+    it "should raise an exception if the queue directory is not readable" do
+      @pathname.chmod 0
+      lambda { @instance.fetch }.should raise_error
+      @pathname.chmod 0755
+    end
+
+    it "should raise an exception if the oldest file in the queue directory is not readable" do
+      path = Pathname.new( @instance.put( @data ) )
+      path.chmod 0333
+      lambda { @instance.fetch }.should raise_error
+      path.chmod 0755
+      path.unlink
+    end
+
+    it "should raise an exception if the oldest file in the queue directory is not deleteable" do
+      path = Pathname.new( @instance.put( @data ) )
+      @pathname.chmod 0555
+      lambda { @instance.fetch }.should raise_error
+      @pathname.chmod 0755
+      path.unlink
+    end
   end
 end
