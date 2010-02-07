@@ -1,5 +1,5 @@
 require 'yaml'
-require 'spool_file'
+require 'spool_pool/file'
 
 class Spool
   attr_reader :pathname
@@ -11,7 +11,7 @@ class Spool
 
   def put( data )
     @pathname.mkpath unless @pathname.exist?
-    SpoolFile.write( @pathname, serialize( data ) )
+    SpoolPool::File.write( @pathname, serialize( data ) )
   end
 
   def get
