@@ -1,4 +1,2 @@
-- gemify
-- provide safe despooling function (keep data for uncaught exceptions)
-- move despooling into SpoolFile class
+- clean up specs
 - use upfront spool pool checking, instead late checking
