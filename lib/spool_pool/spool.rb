@@ -85,7 +85,7 @@ Deserializes the +data+ that has previously been serialized with +serialize+.
 
     private
     def oldest_spooled_file
-      @pathname.children.sort { |a,b| a.ctime <=> b.ctime }.first
+      @pathname.children.sort.first
     end
 
     def validate_spool_directory
