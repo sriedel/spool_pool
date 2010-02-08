@@ -74,6 +74,16 @@ off to this method!
       @spools[spool].get if @spools[spool] 
     end
 
+    def safe_get( spool )
+      validate_spool_path spool
+
+      missing_spool_on_read_handler( spool ) unless @spools.has_key?( spool )
+
+      if @spools[spool] 
+        @spools[spool].safe_get { |spool_data| yield spool_data }
+      end
+    end
+
 =begin rdoc
 Retrieves and deserializes all data in the given +spool+, yielding
 each deserialized data to the supplied block. Ordering is oldest data first.
