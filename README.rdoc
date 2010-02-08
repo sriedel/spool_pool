@@ -35,10 +35,13 @@ pool.get :my_spool
 # demonstrating the ordered retrieval
 
 pool.put :my_other_spool, :foo
+
 sleep 1
+
 spool.put :my_other_spool, :bar
 
 spool.get :my_other_spool # -> :foo
+
 spool.get :my_other_spool # -> :bar
 
 = Feedback/Suggestions
