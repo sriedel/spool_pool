@@ -14,6 +14,36 @@ describe SpoolPool::File do
     @basepath.rmtree
   end
 
+  describe ".safe_read" do
+    before( :each ) do
+      @spoolfile = SpoolPool::File.write( @basepath, @data )
+    end
+
+    it "should yield the read file data" do
+      SpoolPool::File.safe_read( @spoolfile ) do |read_data|
+        read_data.should == @data
+      end
+    end
+
+    context "no exception was raised in the block" do
+      it "should delete the file after the block completes" do
+        SpoolPool::File.safe_read( @spoolfile ) {}
+        File.exist?( @spoolfile ).should be_false
+      end
+    end
+
+    context "an exception was raised in the block" do
+      it "should not delete the file after the block completes" do
+        lambda{ SpoolPool::File.safe_read( @spoolfile ) { raise RuntimeError } }
+        File.exist?( @spoolfile ).should be_true
+      end
+
+      it "should let the thrown exception bubble up further" do
+        lambda{ SpoolPool::File.safe_read( @spoolfile ) { raise RuntimeError } }.should raise_error( RuntimeError )
+      end
+    end
+  end
+
   describe ".write" do
     before( :each ) do
       @failing_tempfile = SpoolPool::File.new( @basepath.to_s )

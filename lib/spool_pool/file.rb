@@ -15,7 +15,20 @@ class library, written by yugui.
     attr_reader :path
 
 =begin rdoc
-Stores the given +data+ in a unique file in the directory +basepath+. 
+  Yields the contents of the given +filename+ to the block, and deletes the
+  file if no exception was raised within the block.
+=end
+    def self.safe_read( filename )
+      ::File.open( filename, "r" ) do |filehandle|
+        data = filehandle.read
+        yield data
+      end
+      ::File.unlink( filename )
+    end
+
+=begin rdoc
+Stores the given +data+ in a unique file in the directory +basepath+.
++basepath+ can be either a file path as a String or a Pathname.
 
 If the data can't be written to the file (permissions, quota, I/O errors...),
 it will attempt to delete the file before throwing an exception.
