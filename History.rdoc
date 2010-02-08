@@ -1,0 +1,11 @@
+= HEAD
+* Add safe_get
+* Include into SpoolPool::File adapted Tempfile code from the ruby stdlib,
+  resulting in ~5x speed improvement for put operations
+* Change the naming scheme of the spool files
+* Sort files by name, not by ctime
+* Cache sorted list of spooled files, resulting in a massive speed up for
+  get/flush operations (10000 files took about 14000 seconds, now 4.4 seconds)
+
+= 0.1
+* First version with a basic implementation of all core features
