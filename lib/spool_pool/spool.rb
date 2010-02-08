@@ -34,7 +34,9 @@ Returns the path of the file storing the data.
 =begin rdoc
 Retrieves and deserializes the oldest data in the spool. 
 
-Ordering is based on the files ctime, but the ordering is non-strict. 
+Ordering is based on the filename (which in turn is based on the files
+creation time), but the ordering is non-strict. 
+
 Data stored within the same second will be returned in a random order.
 =end
     def get
@@ -42,6 +44,12 @@ Data stored within the same second will be returned in a random order.
       retval = file ? deserialize( file.read ) : nil
       file.unlink if file
       retval
+    end
+
+    def safe_get
+      file = oldest_spooled_file
+      return nil unless file
+      SpoolPool::File.safe_read( file ) { |data| yield deserialize(data) }
     end
 
 =begin rdoc

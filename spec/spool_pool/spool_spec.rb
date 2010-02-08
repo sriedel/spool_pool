@@ -99,10 +99,6 @@ describe SpoolPool::Spool do
       @pathname.chmod 0755
     end
 
-    after( :each ) do
-      @pathname.rmtree if @pathname.exist?
-    end
-
     it "should return the contents of one of the files with the oldest ctime in spool directory" do
       oldest_data = 'foo'
       youngest_data = 'blubb'
@@ -148,6 +144,75 @@ describe SpoolPool::Spool do
         lambda { @instance.get }.should raise_error
       end
     end
+  end
+
+  describe "#safe_get" do
+    before( :each ) do
+      @pathname.mkpath
+      @pathname.chmod 0755
+    end
+
+    it "should yield the contents of one of the files with the oldest ctime in spool directory" do
+      oldest_data = 'foo'
+      youngest_data = 'blubb'
+      @instance.put oldest_data
+      sleep 1
+      @instance.put youngest_data
+
+      @instance.safe_get { |spool_data| spool_data.should == oldest_data }
+    end
+
+    context "no file is available in the requested spool" do
+      before( :each ) do
+        @pathname.children.each { |child| child.unlink }
+      end
+
+      it "should return nil" do
+        @instance.safe_get{}.should be_nil
+      end
+    end
+
+    it "should raise an exception if the queue directory is not readable" do
+      with_fs_mode( @pathname, 0000 ) do
+        lambda { @instance.safe_get{} }.should raise_error
+      end
+    end
+
+    context "no exception was raised within the passed block" do
+      it "should delete the read file" do
+        path = Pathname.new( @instance.put( @data ) )
+        @instance.safe_get{}
+        path.should_not be_exist
+      end
+    end
+
+    context "an exception was raised within the passed block" do
+      it "should not delete the read file" do
+        path = Pathname.new( @instance.put( @data ) )
+        lambda{ @instance.safe_get{ raise RuntimeError } }
+        path.should be_exist
+      end
+
+      it "should let the raised exception bubble up" do
+        path = Pathname.new( @instance.put( @data ) )
+        lambda{ @instance.safe_get{ raise RuntimeError } }.should raise_error( RuntimeError )
+      end
+    end
+
+    it "should raise an exception if the oldest file in the queue directory is not readable" do
+      path = Pathname.new( @instance.put( @data ) )
+      with_fs_mode( path, 0333 ) do
+        lambda { @instance.safe_get{} }.should raise_error
+      end
+    end
+
+    it "should raise an exception if the oldest file in the queue directory is not deleteable" do
+      path = Pathname.new( @instance.put( @data ) )
+      with_fs_mode( @pathname, 0555 ) do
+        lambda { @instance.safe_get{} }.should raise_error
+      end
+    end
+    
   end
 
   describe "#flush" do
