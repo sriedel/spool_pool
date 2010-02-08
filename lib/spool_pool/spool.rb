@@ -103,7 +103,12 @@ Deserializes the +data+ that has previously been serialized with +serialize+.
 
     private
     def oldest_spooled_file
-      @pathname.children.sort.first
+      @cached_entries_by_age ||= []
+      if @cached_entries_by_age.size == 0
+        @cached_entries_by_age = @pathname.children.map{ |e| e.to_s }.sort
+      end 
+      return nil if @cached_entries_by_age.size == 0
+      Pathname.new( @cached_entries_by_age.shift )
     end
 
     def validate_spool_directory
