@@ -16,7 +16,7 @@ describe SpoolPool::File do
 
   describe ".write" do
     before( :each ) do
-      @failing_tempfile = Tempfile.new( nil, @basepath.to_s )
+      @failing_tempfile = SpoolPool::File.new( @basepath.to_s )
       @failing_tempfile.stub!( :write ).and_raise( RuntimeError )
     end
 
@@ -45,14 +45,14 @@ describe SpoolPool::File do
     end
 
     it "should raise an exception if the data can't be written" do
-      Tempfile.stub!( :new ).and_return( @failing_tempfile )
+      SpoolPool::File.stub!( :new ).and_return( @failing_tempfile )
 
       lambda { SpoolPool::File.write( @basepath, @data ) }.should raise_error( RuntimeError )
     end
 
     context "on an aborted operation" do
       before( :each ) do
-        Tempfile.stub!( :new ).and_return( @failing_tempfile )
+        SpoolPool::File.stub!( :new ).and_return( @failing_tempfile )
       end
       
       it "should delete any created file again" do
