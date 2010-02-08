@@ -16,7 +16,7 @@ class library, written by yugui.
 
 =begin rdoc
   Yields the contents of the given +filename+ to the block, and deletes the
-  file if no exception was raised within the block.
+  file only if no exception was raised within the block.
 =end
     def self.safe_read( filename )
       ::File.open( filename, "r" ) do |filehandle|

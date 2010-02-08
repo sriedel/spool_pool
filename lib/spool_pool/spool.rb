@@ -46,6 +46,16 @@ Data stored within the same second will be returned in a random order.
       retval
     end
 
+=begin rdoc
+Reads and yields the deserialized data of the oldest file in the spool.
+
+Deletes the file only if no exception was raised within the block.
+
+Ordering is based on the filename (which in turn is based on the files
+creation time), but the ordering is non-strict. 
+
+Data stored within the same second will be returned in a random order.
+=end
     def safe_get
       file = oldest_spooled_file
       return nil unless file
