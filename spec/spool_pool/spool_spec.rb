@@ -152,14 +152,14 @@ describe SpoolPool::Spool do
       @pathname.chmod 0755
     end
 
-    it "should yield the contents of one of the files with the oldest ctime in spool directory" do
+    it "should return the contents of one of the files with the oldest ctime in spool directory" do
       oldest_data = 'foo'
       youngest_data = 'blubb'
       @instance.put oldest_data
       sleep 1
       @instance.put youngest_data
 
-      @instance.get { |spool_data| spool_data.should == oldest_data }
+      @instance.get.should == oldest_data
     end
 
     context "no file is available in the requested spool" do
@@ -168,34 +168,54 @@ describe SpoolPool::Spool do
       end
 
       it "should return nil" do
-        @instance.get{}.should be_nil
+        @instance.get.should be_nil
       end
     end
 
     it "should raise an exception if the queue directory is not readable" do
       with_fs_mode( @pathname, 0000 ) do
-        lambda { @instance.get{} }.should raise_error
+        lambda { @instance.get }.should raise_error
       end
     end
 
-    context "no exception was raised within the passed block" do
+    context "if no block is passed" do
       it "should delete the read file" do
         path = Pathname.new( @instance.put( @data ) )
-        @instance.get{}
+        @instance.get
         path.should_not be_exist
       end
     end
 
-    context "an exception was raised within the passed block" do
-      it "should not delete the read file" do
-        path = Pathname.new( @instance.put( @data ) )
-        lambda{ @instance.get{ raise RuntimeError } }
-        path.should be_exist
+    context "if a block is passed" do
+      it "should yield the contents of one of the files with the oldest ctime in spool directory" do
+        oldest_data = 'foo'
+        youngest_data = 'blubb'
+        @instance.put oldest_data
+        sleep 1
+        @instance.put youngest_data
+
+        @instance.get { |spool_data| spool_data.should == oldest_data }
       end
 
-      it "should let the raised exception bubble up" do
-        path = Pathname.new( @instance.put( @data ) )
-        lambda{ @instance.get{ raise RuntimeError } }.should raise_error( RuntimeError )
+      context "no exception was raised within the passed block" do
+        it "should delete the read file" do
+          path = Pathname.new( @instance.put( @data ) )
+          @instance.get{}
+          path.should_not be_exist
+        end
+      end
+
+      context "an exception was raised within the passed block" do
+        it "should not delete the read file" do
+          path = Pathname.new( @instance.put( @data ) )
+          lambda{ @instance.get{ raise RuntimeError } }
+          path.should be_exist
+        end
+
+        it "should let the raised exception bubble up" do
+          path = Pathname.new( @instance.put( @data ) )
+          lambda{ @instance.get{ raise RuntimeError } }.should raise_error( RuntimeError )
+        end
       end
     end
 

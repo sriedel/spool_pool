@@ -41,9 +41,10 @@ Data stored within the same second will be returned in a random order.
 =end
     def get!
       file = oldest_spooled_file
-      retval = file ? deserialize( file.read ) : nil
-      file.unlink if file
-      retval
+      return nil unless file
+
+      data = SpoolPool::File.safe_read( file )
+      deserialize( data )
     end
 
 =begin rdoc
@@ -56,10 +57,15 @@ creation time), but the ordering is non-strict.
 
 Data stored within the same second will be returned in a random order.
 =end
-    def get
+    def get(&block)
       file = oldest_spooled_file
       return nil unless file
-      SpoolPool::File.safe_read( file ) { |data| yield deserialize(data) }
+      data = if block_given?
+              SpoolPool::File.safe_read( file ) { |data| block.call( deserialize(data) ) }
+            else
+              SpoolPool::File.safe_read( file )
+            end
+      deserialize(data)
     end
 
 =begin rdoc
