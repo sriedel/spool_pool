@@ -32,7 +32,8 @@ Returns the path of the file storing the data.
     end
 
 =begin rdoc
-Reads and yields the deserialized data of the oldest file in the spool.
+Reads and returns the deserialized data of the oldest file in the spool, 
+yielding the deserialized data to an optionally passed block..
 
 Deletes the file only if no exception was raised within the block.
 
