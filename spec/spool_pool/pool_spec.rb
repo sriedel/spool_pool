@@ -268,25 +268,43 @@ describe SpoolPool::Pool do
         lambda { @instance.get( @spool ){} }.should raise_error
       end
     end
+  
+    context "no block was passed" do
+      before( :each ) do
+        path = @instance.put( @spool, @data ) 
+        @path = Pathname.new( path )
+      end
 
-    context "if no exception was raised in the block" do
       it "should delete the read file" do
-        path = Pathname.new( @instance.put( @spool, @data ) )
-        @instance.get( @spool ) {}
-        path.should_not be_exist
+        @instance.get @spool
+        @path.should_not be_exist
+      end
+
+      it "should return the result of the get operation" do
+        @instance.get( @spool ).should == @data
       end
     end
 
-    context "if an exception was raised in the block" do
-      it "should not delete the read file" do
-        path = Pathname.new( @instance.put( @spool, @data ) )
-        lambda{ @instance.get( @spool ) {raise RuntimeError} }
-        path.should be_exist
+    context "a block was passed" do
+      context "if no exception was raised in the block" do
+        it "should delete the read file" do
+          path = Pathname.new( @instance.put( @spool, @data ) )
+          @instance.get( @spool ) {}
+          path.should_not be_exist
+        end
       end
 
-      it "should let the exception bubble up" do
-        path = Pathname.new( @instance.put( @spool, @data ) )
-        lambda{ @instance.get( @spool ) {raise RuntimeError} }.should raise_error( RuntimeError )
+      context "if an exception was raised in the block" do
+        it "should not delete the read file" do
+          path = Pathname.new( @instance.put( @spool, @data ) )
+          lambda{ @instance.get( @spool ) {raise RuntimeError} }
+          path.should be_exist
+        end
+
+        it "should let the exception bubble up" do
+          path = Pathname.new( @instance.put( @spool, @data ) )
+          lambda{ @instance.get( @spool ) {raise RuntimeError} }.should raise_error( RuntimeError )
+        end
       end
     end
 

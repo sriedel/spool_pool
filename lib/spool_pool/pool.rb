@@ -74,14 +74,20 @@ off to this method!
       @spools[spool].get if @spools[spool] 
     end
 
-    def get( spool )
+    def get( spool, &block )
       validate_spool_path spool
 
       missing_spool_on_read_handler( spool ) unless @spools.has_key?( spool )
 
+      data = nil
       if @spools[spool] 
-        @spools[spool].get { |spool_data| yield spool_data }
+        data = if block_given?
+                  @spools[spool].get { |spool_data| block.call( spool_data ) }
+                else
+                  @spools[spool].get 
+                end
       end
+      data
     end
 
 =begin rdoc
