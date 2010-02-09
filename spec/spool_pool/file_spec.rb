@@ -19,27 +19,52 @@ describe SpoolPool::File do
       @spoolfile = SpoolPool::File.write( @basepath, @data )
     end
 
-    it "should yield the read file data" do
-      SpoolPool::File.safe_read( @spoolfile ) do |read_data|
-        read_data.should == @data
-      end
+    it "should return the files content data" do
+      SpoolPool::File.safe_read( @spoolfile ).should == @data
     end
 
-    context "no exception was raised in the block" do
-      it "should delete the file after the block completes" do
-        SpoolPool::File.safe_read( @spoolfile ) {}
+    context "no block is passed" do
+      it "should not yield" do
+        SpoolPool::File.safe_read( @spoolfile )
+      end
+
+      it "should delete the file after reading the file" do
+        SpoolPool::File.safe_read( @spoolfile )
         File.exist?( @spoolfile ).should be_false
       end
     end
 
-    context "an exception was raised in the block" do
-      it "should not delete the file after the block completes" do
-        lambda{ SpoolPool::File.safe_read( @spoolfile ) { raise RuntimeError } }
-        File.exist?( @spoolfile ).should be_true
+    context "a block is passed" do
+      it "should yield the read file data" do
+        SpoolPool::File.safe_read( @spoolfile ) do |read_data|
+          read_data.should == @data
+        end
       end
 
-      it "should let the thrown exception bubble up further" do
-        lambda{ SpoolPool::File.safe_read( @spoolfile ) { raise RuntimeError } }.should raise_error( RuntimeError )
+      context "no exception was raised in the block" do
+        before( :each ) do
+          @block = Proc.new {}
+        end
+
+        it "should delete the file after the block completes" do
+          SpoolPool::File.safe_read( @spoolfile, &@block ) 
+          File.exist?( @spoolfile ).should be_false
+        end
+      end
+
+      context "an exception was raised in the block" do
+        before( :each ) do
+          @block = Proc.new { raise RuntimeError }
+        end
+
+        it "should not delete the file after the block completes" do
+          lambda{ SpoolPool::File.safe_read( @spoolfile, &@block ) }
+          File.exist?( @spoolfile ).should be_true
+        end
+
+        it "should let the thrown exception bubble up further" do
+          lambda{ SpoolPool::File.safe_read( @spoolfile, &@block ) }.should raise_error( RuntimeError )
+        end
       end
     end
   end
