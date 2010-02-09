@@ -15,8 +15,13 @@ class library, written by yugui.
     attr_reader :path
 
 =begin rdoc
-  Yields the contents of the given +filename+ to the block, and deletes the
-  file only if no exception was raised within the block.
+  Returns the data read from the given +filename+, and deletes the file 
+  before returning.
+
+  Yields the read data also to an optionally given block. If you give a block
+  to process your data and your code throws an exception, the file will not
+  be deleted and another processing of the data can be attempted in the 
+  future.
 =end
     def self.safe_read( filename )
       data = ::File.read( filename )
