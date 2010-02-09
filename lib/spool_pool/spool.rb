@@ -39,7 +39,7 @@ creation time), but the ordering is non-strict.
 
 Data stored within the same second will be returned in a random order.
 =end
-    def get
+    def get!
       file = oldest_spooled_file
       retval = file ? deserialize( file.read ) : nil
       file.unlink if file
@@ -56,7 +56,7 @@ creation time), but the ordering is non-strict.
 
 Data stored within the same second will be returned in a random order.
 =end
-    def safe_get
+    def get
       file = oldest_spooled_file
       return nil unless file
       SpoolPool::File.safe_read( file ) { |data| yield deserialize(data) }
@@ -71,7 +71,7 @@ Data stored within the same second will be returned in a random order.
 =end
     def flush
       loop do
-        data = get
+        data = get!
         break if data.nil?
 
         yield data

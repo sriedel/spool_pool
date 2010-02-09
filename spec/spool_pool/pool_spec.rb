@@ -112,17 +112,17 @@ describe SpoolPool::Pool do
     end
   end
 
-  describe "the #get/#put pair" do
+  describe "the #get!/#put pair" do
     it "should serialize/deserialize the data written" do
       data = { :foo => "some value", :bar => [ 3, 3.45, "another string" ] }
       @instance.put @spool, data
-      read_data = @instance.get @spool
+      read_data = @instance.get! @spool
 
       read_data.should == data
     end
   end
 
-  describe "#get" do
+  describe "#get!" do
     it "should return the contents of one of the files with the oldest ctime in spool directory" do
       oldest_data = 'foo'
       youngest_data = 'blubb'
@@ -130,7 +130,7 @@ describe SpoolPool::Pool do
       sleep 1
       @instance.put @spool, youngest_data
 
-      @instance.get( @spool ).should == oldest_data
+      @instance.get!( @spool ).should == oldest_data
     end
 
     context "if the spool object doesn't exist yet" do
@@ -141,18 +141,18 @@ describe SpoolPool::Pool do
         end
 
         it "should create a spool object" do
-          @instance.get @spool
+          @instance.get! @spool
           @instance.spools[@spool].should_not be_nil
         end
 
-        it "should return the result of the get operation" do
-          @instance.get( @spool ).should == @data
+        it "should return the result of the get! operation" do
+          @instance.get!( @spool ).should == @data
         end
       end
 
       context "if such a spool directory does not exist" do
         it "should return nil" do
-          @instance.get( :non_existant_spool ).should be_nil
+          @instance.get!( :non_existant_spool ).should be_nil
         end
       end
     end
@@ -163,7 +163,7 @@ describe SpoolPool::Pool do
       end
 
       it "should return nil" do
-        @instance.get( @spool ).should be_nil
+        @instance.get!( @spool ).should be_nil
       end
     end
 
@@ -171,20 +171,20 @@ describe SpoolPool::Pool do
       @instance.put @spool, "some data"
 
       with_fs_mode( @spool_pathname, 0000 ) do
-        lambda { @instance.get( @spool ) }.should raise_error
+        lambda { @instance.get!( @spool ) }.should raise_error
       end
     end
 
     it "should delete the read file" do
       path = Pathname.new( @instance.put( @spool, @data ) )
-      @instance.get @spool
+      @instance.get! @spool
       path.should_not be_exist
     end
 
     it "should raise an exception if the oldest file in the queue directory is not readable" do
       path = Pathname.new( @instance.put( @spool, @data ) )
       with_fs_mode( path, 0333 ) do
-        lambda { @instance.get( @spool ) }.should raise_error
+        lambda { @instance.get!( @spool ) }.should raise_error
       end
       path.unlink
     end
@@ -192,14 +192,14 @@ describe SpoolPool::Pool do
     it "should raise an exception if the oldest file in the queue directory is not deleteable" do
       path = Pathname.new( @instance.put( @spool, @data ) )
       with_fs_mode( @instance.spools[@spool].pathname, 0555 ) do
-        lambda { @instance.get( @spool ) }.should raise_error
+        lambda { @instance.get!( @spool ) }.should raise_error
       end
       path.unlink
     end
 
     context "queue names that try to escape the queue_dir" do
       it "should raise an exception on directory traversal attempts" do
-        lambda { @instance.get "../../foo" }.should raise_error
+        lambda { @instance.get! "../../foo" }.should raise_error
       end
 
       it "should not raise an exception if following a symlink" do
@@ -208,7 +208,7 @@ describe SpoolPool::Pool do
         symlinked_path = Pathname.new( @spool_pathname + "symlink" )
         symlinked_path.make_symlink( real_path.to_s )
 
-        lambda { @instance.get "symlink" }.should_not raise_error
+        lambda { @instance.get! "symlink" }.should_not raise_error
 
         symlinked_path.unlink
         real_path.rmtree
@@ -216,7 +216,7 @@ describe SpoolPool::Pool do
     end
   end
 
-  describe "#safe_get" do
+  describe "#get" do
     it "should yield the contents of one of the files with the oldest spooling time in spool directory" do
       oldest_data = 'foo'
       youngest_data = 'blubb'
@@ -224,7 +224,7 @@ describe SpoolPool::Pool do
       sleep 1
       @instance.put @spool, youngest_data
 
-      @instance.safe_get( @spool ) { |spool_data| spool_data.should == oldest_data }
+      @instance.get( @spool ) { |spool_data| spool_data.should == oldest_data }
     end
 
     context "if the spool object doesn't exist yet" do
@@ -235,18 +235,18 @@ describe SpoolPool::Pool do
         end
 
         it "should create a spool object" do
-          @instance.safe_get( @spool ) {}
+          @instance.get( @spool ) {}
           @instance.spools[@spool].should_not be_nil
         end
 
         it "should return the result of the get operation" do
-          @instance.safe_get( @spool ){ |spool_data| spool_data.should == @data }
+          @instance.get( @spool ){ |spool_data| spool_data.should == @data }
         end
       end
 
       context "if such a spool directory does not exist" do
         it "should return nil" do
-          @instance.safe_get( :non_existant_spool ){}.should be_nil
+          @instance.get( :non_existant_spool ){}.should be_nil
         end
       end
     end
@@ -257,7 +257,7 @@ describe SpoolPool::Pool do
       end
 
       it "should return nil" do
-        @instance.safe_get( @spool ){}.should be_nil
+        @instance.get( @spool ){}.should be_nil
       end
     end
 
@@ -265,14 +265,14 @@ describe SpoolPool::Pool do
       @instance.put @spool, "some data"
 
       with_fs_mode( @spool_pathname, 0000 ) do
-        lambda { @instance.safe_get( @spool ){} }.should raise_error
+        lambda { @instance.get( @spool ){} }.should raise_error
       end
     end
 
     context "if no exception was raised in the block" do
       it "should delete the read file" do
         path = Pathname.new( @instance.put( @spool, @data ) )
-        @instance.safe_get( @spool ) {}
+        @instance.get( @spool ) {}
         path.should_not be_exist
       end
     end
@@ -280,20 +280,20 @@ describe SpoolPool::Pool do
     context "if an exception was raised in the block" do
       it "should not delete the read file" do
         path = Pathname.new( @instance.put( @spool, @data ) )
-        lambda{ @instance.safe_get( @spool ) {raise RuntimeError} }
+        lambda{ @instance.get( @spool ) {raise RuntimeError} }
         path.should be_exist
       end
 
       it "should let the exception bubble up" do
         path = Pathname.new( @instance.put( @spool, @data ) )
-        lambda{ @instance.safe_get( @spool ) {raise RuntimeError} }.should raise_error( RuntimeError )
+        lambda{ @instance.get( @spool ) {raise RuntimeError} }.should raise_error( RuntimeError )
       end
     end
 
     it "should raise an exception if the oldest file in the queue directory is not readable" do
       path = Pathname.new( @instance.put( @spool, @data ) )
       with_fs_mode( path, 0333 ) do
-        lambda { @instance.safe_get( @spool ){} }.should raise_error
+        lambda { @instance.get( @spool ){} }.should raise_error
       end
       path.unlink
     end
@@ -301,14 +301,14 @@ describe SpoolPool::Pool do
     it "should raise an exception if the oldest file in the queue directory is not deleteable" do
       path = Pathname.new( @instance.put( @spool, @data ) )
       with_fs_mode( @instance.spools[@spool].pathname, 0555 ) do
-        lambda { @instance.safe_get( @spool ){} }.should raise_error
+        lambda { @instance.get( @spool ){} }.should raise_error
       end
       path.unlink
     end
 
     context "queue names that try to escape the queue_dir" do
       it "should raise an exception on directory traversal attempts" do
-        lambda { @instance.safe_get( "../../foo" ){} }.should raise_error
+        lambda { @instance.get( "../../foo" ){} }.should raise_error
       end
 
       it "should not raise an exception if following a symlink" do
@@ -317,7 +317,7 @@ describe SpoolPool::Pool do
         symlinked_path = Pathname.new( @spool_pathname + "symlink" )
         symlinked_path.make_symlink( real_path.to_s )
 
-        lambda { @instance.safe_get( "symlink" ){} }.should_not raise_error
+        lambda { @instance.get( "symlink" ){} }.should_not raise_error
 
         symlinked_path.unlink
         real_path.rmtree
