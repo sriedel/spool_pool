@@ -54,7 +54,11 @@ off to this method!
     end
 
 =begin rdoc
-Retrieves and deserializes oldest data in the given +spool+. 
+Retrieves and deserializes oldest data in the given +spool+, yielding it to 
+an optional block as well. The spool file is deleted just before the method
+returns. If a block was given, and an exception was raised within the block,
+the spool file is not deleted and another try at processing can be attempted
+in the future.
 
 Note that while data is retrieved oldest first, the order is non-strict, i.e.
 different data written during the same second to the storage will be
@@ -72,13 +76,7 @@ off to this method!
       missing_spool_on_read_handler( spool ) unless @spools.has_key?( spool )
 
       data = nil
-      if @spools[spool] 
-        data = if block_given?
-                  @spools[spool].get { |spool_data| block.call( spool_data ) }
-                else
-                  @spools[spool].get 
-                end
-      end
+      data = @spools[spool].get( &block ) if @spools[spool] 
       data
     end
 

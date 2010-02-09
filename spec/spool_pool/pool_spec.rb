@@ -113,12 +113,19 @@ describe SpoolPool::Pool do
   end
 
   describe "the #get/#put pair" do
-    it "should serialize/deserialize the data written" do
-      data = { :foo => "some value", :bar => [ 3, 3.45, "another string" ] }
-      @instance.put @spool, data
-      read_data = @instance.get @spool
+    before( :each ) do
+      @data = { :foo => "some value", :bar => [ 3, 3.45, "another string" ] }
+      @instance.put @spool, @data
+    end
 
-      read_data.should == data
+    it "should serialize/deserialize the data written and returned" do
+      @instance.get( @spool ).should == @data
+    end
+
+    it "should serialize/deserialize the data written and yielded" do
+      @instance.get( @spool ) do |read_data|
+        read_data.should == @data
+      end
     end
   end
 
