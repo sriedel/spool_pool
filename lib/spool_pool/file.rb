@@ -19,12 +19,8 @@ class library, written by yugui.
   file only if no exception was raised within the block.
 =end
     def self.safe_read( filename )
-      data = nil
-
-      ::File.open( filename, "r" ) do |filehandle|
-        data = filehandle.read
-        yield data if block_given?
-      end
+      data = ::File.read( filename )
+      yield data if block_given?
       ::File.unlink( filename )
       data
     end
