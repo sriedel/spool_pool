@@ -66,14 +66,6 @@ traversal attempts. *DO NOT* rely on this for security relevant systems,
 always validate user supplied queue names yourself before handing them 
 off to this method!
 =end
-    def get!( spool )
-      validate_spool_path spool
-
-      missing_spool_on_read_handler( spool ) unless @spools.has_key?( spool )
-
-      @spools[spool].get if @spools[spool] 
-    end
-
     def get( spool, &block )
       validate_spool_path spool
 
