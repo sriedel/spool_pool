@@ -32,22 +32,6 @@ Returns the path of the file storing the data.
     end
 
 =begin rdoc
-Retrieves and deserializes the oldest data in the spool. 
-
-Ordering is based on the filename (which in turn is based on the files
-creation time), but the ordering is non-strict. 
-
-Data stored within the same second will be returned in a random order.
-=end
-    def get!
-      file = oldest_spooled_file
-      return nil unless file
-
-      data = SpoolPool::File.safe_read( file )
-      deserialize( data )
-    end
-
-=begin rdoc
 Reads and yields the deserialized data of the oldest file in the spool.
 
 Deletes the file only if no exception was raised within the block.
@@ -77,7 +61,7 @@ Data stored within the same second will be returned in a random order.
 =end
     def flush
       loop do
-        data = get!
+        data = get
         break if data.nil?
 
         yield data

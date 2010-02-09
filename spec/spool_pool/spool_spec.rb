@@ -82,67 +82,14 @@ describe SpoolPool::Spool do
     end
   end
 
-  describe "the #get!/#put pair" do
+  describe "the #get/#put pair" do
     it "should serialize and deserialize the data written" do
       data = { :foo => 2, :bar => [ "some string", 3.45, ] }
 
       @instance.put data
-      read_data = @instance.get!
+      read_data = @instance.get
 
       read_data.should == data
-    end
-  end
-
-  describe "#get!" do
-    before( :each ) do
-      @pathname.mkpath
-      @pathname.chmod 0755
-    end
-
-    it "should return the contents of one of the files with the oldest ctime in spool directory" do
-      oldest_data = 'foo'
-      youngest_data = 'blubb'
-      @instance.put oldest_data
-      sleep 1
-      @instance.put youngest_data
-
-      @instance.get!.should == oldest_data
-    end
-
-    context "no file is available in the requested spool" do
-      before( :each ) do
-        @pathname.children.each { |child| child.unlink }
-      end
-
-      it "should return nil" do
-        @instance.get!.should be_nil
-      end
-    end
-
-    it "should raise an exception if the queue directory is not readable" do
-      with_fs_mode( @pathname, 0000 ) do
-        lambda { @instance.get! }.should raise_error
-      end
-    end
-
-    it "should delete the read file" do
-      path = Pathname.new( @instance.put( @data ) )
-      @instance.get!
-      path.should_not be_exist
-    end
-
-    it "should raise an exception if the oldest file in the queue directory is not readable" do
-      path = Pathname.new( @instance.put( @data ) )
-      with_fs_mode( path, 0333 ) do
-        lambda { @instance.get! }.should raise_error
-      end
-    end
-
-    it "should raise an exception if the oldest file in the queue directory is not deleteable" do
-      path = Pathname.new( @instance.put( @data ) )
-      with_fs_mode( @pathname, 0555 ) do
-        lambda { @instance.get! }.should raise_error
-      end
     end
   end
 

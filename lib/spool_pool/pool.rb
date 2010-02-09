@@ -71,7 +71,7 @@ off to this method!
 
       missing_spool_on_read_handler( spool ) unless @spools.has_key?( spool )
 
-      @spools[spool].get! if @spools[spool] 
+      @spools[spool].get if @spools[spool] 
     end
 
     def get( spool )
