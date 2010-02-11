@@ -134,7 +134,6 @@ describe SpoolPool::Pool do
       oldest_data = 'foo'
       youngest_data = 'blubb'
       @instance.put @spool, oldest_data
-      sleep 1
       @instance.put @spool, youngest_data
 
       @instance.get( @spool ) { |spool_data| spool_data.should == oldest_data }
@@ -263,9 +262,7 @@ describe SpoolPool::Pool do
         @middle_data = "middle data"
         @youngest_data = "youngest data"
         @oldest_file = @instance.put @spool, @oldest_data
-        sleep 1
         @middle_file = @instance.put @spool, @middle_data
-        sleep 1
         @youngest_file = @instance.put @spool, @youngest_data
       end
 
