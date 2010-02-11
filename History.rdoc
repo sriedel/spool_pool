@@ -1,5 +1,6 @@
-= HEAD
-* Add safe_get
+= 0.2
+* Add safe behaviour for get: supply operations in a block; the spoolfile 
+  only gets deleted if the block completes without an exception
 * Include into SpoolPool::File adapted Tempfile code from the ruby stdlib,
   resulting in ~5x speed improvement for put operations
 * Change the naming scheme of the spool files
