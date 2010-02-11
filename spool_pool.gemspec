@@ -1,11 +1,11 @@
 Gem::Specification.new do |s|
   s.name = "spool_pool"
-  s.version = "0.1"
+  s.version = "0.2"
 
   s.required_ruby_version = ">= 1.9.1"
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Sven Riedel"]
-  s.date = %q{2010-02-07}
+  s.date = %q{2010-02-11}
   s.description = %q{A simple library for spooler pools.}
   s.summary = %q{A simple library for spooler pools.}
   s.email = %q{sr@gimp.org}
@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = %W{ LICENSE.txt README.rdoc }
   s.files = %W{ LICENSE.txt
                 README.rdoc
+                History.rdoc
                 TODOs
                 lib/spool_pool.rb
                 lib/spool_pool/pool.rb
@@ -27,6 +28,7 @@ Gem::Specification.new do |s|
                 spec/spool_pool/spool_spec.rb
                 spec/spool_pool/file_spec.rb
                 test_spool
+                scripts/perf_test.rb
               }
 
 end
