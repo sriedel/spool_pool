@@ -96,7 +96,7 @@ Deserializes the +data+ that has previously been serialized with +serialize+.
     def oldest_spooled_file
       @cached_entries_by_age ||= []
       if @cached_entries_by_age.size == 0
-        @cached_entries_by_age = @pathname.children.map{ |e| e.to_s }.sort
+        @cached_entries_by_age = @pathname.children.select { |e| e.file? }.map{ |e| e.to_s }.sort
       end 
       return nil if @cached_entries_by_age.size == 0
       Pathname.new( @cached_entries_by_age.shift )
