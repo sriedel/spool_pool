@@ -131,7 +131,7 @@ Returns the path of the file storing the data.
 
     private
     def spoolfilename_for_try(n)
-      "#{Time.now.strftime("%Y%m%d%H%M%S")}-#{$$}-#{rand(0x100000000).to_s(36)}-#{n}"
+      "#{Time.now.to_f}-#{$$}-#{n}"
     end
 
     def create_threadsafe_spoolname( basedir )
