@@ -19,6 +19,32 @@ user input!
     attr_reader :spool_dir
     attr_reader :spools
 
+    def self.validate_pool_dir( directory )
+      pool_dir = Pathname.new( directory )
+      
+      if !pool_dir.exist?
+        raise Errno::EACCES unless pool_dir.parent.writable? and
+                                   pool_dir.parent.executable?
+        return
+      end
+
+      raise Errno::EACCES unless pool_dir.readable? and
+                                 pool_dir.writable? and
+                                 pool_dir.executable?
+      
+      return if pool_dir.children.empty?
+
+      pool_dir.children.select{ |d| d.dir? }.each do |spool_dir|
+        raise Errno::EACCES unless spool_dir.readable? and
+                                   spool_dir.writable? and
+                                   spool_dir.executable?
+
+        spool_dir.children.select{ |f| f.file? }.each do |spool_file|
+          raise Errno::EACCES unless spool_file.readable?
+        end
+      end
+    end
+
 =begin rdoc
 Sets up a spooling pool in the +spool_path+ given. 
 If the directory does not exist, it will try to create it for you. 

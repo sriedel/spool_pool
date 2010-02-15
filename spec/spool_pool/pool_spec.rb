@@ -14,6 +14,7 @@ describe SpoolPool::Pool do
   end
 
   after( :each ) do
+    @spool_pathname.chmod 0755 if @spool_pathname.exist?
     @spool_pathname.rmtree if @spool_pathname.exist?
   end
 
@@ -28,7 +29,158 @@ describe SpoolPool::Pool do
   it "should have a spools attribute" do
     @instance.should respond_to( :spools )
   end
-  
+
+  describe ".validate_pool_dir" do
+    context "if the pool directory does not exist, examine the parent dir" do
+      before( :each ) do
+        @spool_pathname.rmdir if @spool_pathname.exist?
+      end
+
+      after( :each ) do
+        @root_pathname.chmod 0755
+      end
+
+
+      context "it does not allow the pool directory to be created" do
+        before( :each ) do
+          @root_pathname.chmod 0555
+        end
+        it "should throw an exception" do
+          lambda { SpoolPool::Pool.validate_pool_dir( @spool_pathname.to_s ) }.should raise_error( Errno::EACCES )
+        end
+      end
+      
+      context "if it is not executable" do
+        before( :each ) do
+          @root_pathname.chmod 0666
+        end
+
+        it "should throw an exception" do
+          lambda { SpoolPool::Pool.validate_pool_dir( @spool_pathname.to_s ) }.should raise_error
+        end
+      end
+
+      context "it allows the pool directory to be created" do
+        before( :each ) do
+          @root_pathname.chmod 0755
+        end
+
+        it "should not raise an exception" do
+          lambda { SpoolPool::Pool.validate_pool_dir( @spool_pathname.to_s ) }.should_not raise_error
+        end
+      end
+    end
+
+    context "if the pool directory exists" do
+      before( :each ) do
+        @spool_pathname.mkpath
+        @spool_pathname.chmod 0755
+      end
+
+      context "if it is not readable" do
+        before( :each ) do
+          @spool_pathname.chmod 0333
+        end
+
+        it "should throw an exception" do
+          lambda { SpoolPool::Pool.validate_pool_dir( @spool_pathname.to_s ) }.should raise_error
+        end
+      end
+
+      context "if it is not writeable" do
+        before( :each ) do
+          @spool_pathname.chmod 0555
+        end
+
+        it "should throw an exception" do
+          lambda { SpoolPool::Pool.validate_pool_dir( @spool_pathname.to_s ) }.should raise_error
+        end
+      end
+
+      context "if it is not executable" do
+        before( :each ) do
+          @spool_pathname.chmod 0666
+        end
+
+        it "should throw an exception" do
+          lambda { SpoolPool::Pool.validate_pool_dir( @spool_pathname.to_s ) }.should raise_error
+        end
+      end
+
+      context "if it is read- and writeable" do 
+        context "if subdirectories exist" do
+          before( :each ) do
+            @spool_dir1 = @spool_pathname + "spool1"
+            @spool_dir1.mkpath
+            @spool_dir1.chmod 0755
+            @spool_dir2 = @spool_pathname + "spool2"
+            @spool_dir2.mkpath
+            @spool_dir2.chmod 0755
+          end
+
+          after( :each ) do
+            @spool_dir1.chmod 0755 if @spool_dir1.exist?
+            @spool_dir2.chmod 0755 if @spool_dir2.exist?
+          end
+
+          context "if any is not readable" do
+            before( :each ) do
+              @spool_dir1.chmod 0333
+            end
+
+            it "should throw an exception" do
+              lambda { SpoolPool::Pool.validate_pool_dir( @spool_pathname.to_s ) }.should raise_error
+            end
+          end
+
+          context "if any is not writeable" do
+            before( :each ) do
+              @spool_dir1.chmod 0555
+            end
+
+            it "should throw an exception" do
+              lambda { SpoolPool::Pool.validate_pool_dir( @spool_pathname.to_s ) }.should raise_error
+            end
+          end
+
+          context "if it is not executable" do
+            before( :each ) do
+              @spool_dir1.chmod 0666
+            end
+
+            it "should throw an exception" do
+              lambda { SpoolPool::Pool.validate_pool_dir( @spool_pathname.to_s ) }.should raise_error
+            end
+          end
+
+          context "if they are all read- and writeable" do
+            context "if there are files" do 
+              before( :each ) do
+                @spool_file1 = @spool_dir1 + "file1"
+                @spool_file2 = @spool_dir1 + "file2"
+                FileUtils.touch @spool_file1.to_s
+                @spool_file1.chmod 0644
+                FileUtils.touch @spool_file2.to_s
+                @spool_file2.chmod 0644
+              end
+
+              context "if any are not readable" do
+                before( :each ) do
+                  @spool_file1.chmod 0222
+                end
+
+                it "should throw an exception" do
+                  lambda { SpoolPool::Pool.validate_pool_dir( @spool_pathname.to_s ) }.should raise_error
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+
   describe "#initialize" do
     it "should set the spool_dir attribute" do
       @instance.spool_dir.to_s.should == @spool_path
