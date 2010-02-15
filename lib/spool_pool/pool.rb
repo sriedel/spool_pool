@@ -19,29 +19,39 @@ user input!
     attr_reader :spool_dir
     attr_reader :spools
 
+=begin rdoc
+  Sanity checking of the given pool +directory+ and it's children (and parent,
+  if the +directory+ itself doesn't exist yet). 
+
+  Will throw an exception if anything permission-wise looks fishy.
+=end
     def self.validate_pool_dir( directory )
       pool_dir = Pathname.new( directory )
-      
-      if !pool_dir.exist?
-        raise Errno::EACCES unless pool_dir.parent.writable? and
-                                   pool_dir.parent.executable?
-        return
-      end
-
-      raise Errno::EACCES unless pool_dir.readable? and
-                                 pool_dir.writable? and
-                                 pool_dir.executable?
-      
-      return if pool_dir.children.empty?
-
-      pool_dir.children.select{ |d| d.dir? }.each do |spool_dir|
-        raise Errno::EACCES unless spool_dir.readable? and
-                                   spool_dir.writable? and
-                                   spool_dir.executable?
-
-        spool_dir.children.select{ |f| f.file? }.each do |spool_file|
-          raise Errno::EACCES unless spool_file.readable?
+     
+      begin
+        if !pool_dir.exist?
+          raise Errno::EACCES unless pool_dir.parent.writable? and
+                                     pool_dir.parent.executable?
+          return
         end
+
+        raise Errno::EACCES unless pool_dir.readable? and
+                                   pool_dir.writable? and
+                                   pool_dir.executable?
+        
+        return if pool_dir.children.empty?
+
+        pool_dir.children.select{ |d| d.dir? }.each do |spool_dir|
+          raise Errno::EACCES unless spool_dir.readable? and
+                                     spool_dir.writable? and
+                                     spool_dir.executable?
+
+          spool_dir.children.select{ |f| f.file? }.each do |spool_file|
+            raise Errno::EACCES unless spool_file.readable?
+          end
+        end
+      rescue Errno::EACCES
+        raise Errno::EACCES.new( "Something doesn't look right permission wise. Consider running 'chmod -R 0755 #{directory}' or the equivalent. If the #{directory} itself doesn't exist, check to make sure it's parent exists, and is write- and executable for the current process owner." )
       end
     end
 
