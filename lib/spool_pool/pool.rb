@@ -57,6 +57,8 @@ of the process.
       @spool_dir = Pathname.new spool_path
       @spools = {}
 
+      self.class.validate_pool_dir( spool_path )
+
       setup_spooldir unless @spool_dir.exist?
       assert_readable @spool_dir
       assert_writeable @spool_dir
